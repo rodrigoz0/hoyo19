@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoyo 19 · Restaurante</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              gold:  '#C9A96E',
+              dark:  '#0D0D0D',
+              cream: '#F5F0E8',
+              muted: '#7A7065',
+            }
+          },
+          fontFamily: {
+            serif: ['Cormorant Garamond', 'serif'],
+            sans:  ['Jost', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ── Intro overlay ── */
+    #intro-overlay { animation: introFade 0.8s ease 2.4s forwards; }
+    #intro-logo    { animation: logoReveal 1s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
+    #intro-line    { animation: lineGrow 0.8s ease 1s both; }
+    #intro-sub     { animation: fadeUp 0.8s ease 1.3s both; }
+
+    @keyframes introFade  { to { opacity:0; pointer-events:none; } }
+    @keyframes logoReveal {
+      from { opacity:0; transform:translateY(24px); letter-spacing:0.3em; }
+      to   { opacity:1; transform:translateY(0);    letter-spacing:0.18em; }
+    }
+    @keyframes lineGrow { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ── Hero stagger ── */
+    .hero-content > * { opacity:0; animation:fadeUp 0.9s ease forwards; }
+    .hero-content > *:nth-child(1) { animation-delay:3s; }
+    .hero-content > *:nth-child(2) { animation-delay:3.2s; }
+    .hero-content > *:nth-child(3) { animation-delay:3.4s; }
+
+    /* ── Botones de acción ── */
+    .action-btn { transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease; }
+    /* hover: solo en dispositivos que lo soportan (no en táctil) */
+    @media (hover: hover) {
+      .action-btn:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(201,169,110,0.15); }
+    }
+    /* feedback táctil inmediato en móvil */
+    .action-btn:active { transform:scale(0.97); box-shadow:none; }
+
+    /* ── Navegación de categorías ── */
+    .category-nav {
+      /* ocultar barra de scroll en todos los navegadores */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .category-nav::-webkit-scrollbar { display:none; }
+
+    /* indicador de scroll: sombra derecha que desaparece al llegar al final */
+    .category-nav-wrap {
+      position: relative;
+    }
+    .category-nav-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 40px; height: 100%;
+      background: linear-gradient(to right, transparent, #F5EFE6);
+      pointer-events: none;
+      /* se oculta en md+ donde los items caben centrados */
+    }
+    @media (min-width: 768px) {
+      .category-nav-wrap::after { display:none; }
+    }
+
+    /* ── Pill de categoría: estado activo via JS ── */
+    .cat-pill { transition: background 0.2s, color 0.2s, border-color 0.2s; }
+    .cat-pill.active,
+    .cat-pill:active {
+      background: #C9A96E;
+      color: #fff;
+      border-color: #C9A96E;
+    }
+    @media (hover: hover) {
+      .cat-pill:hover { background:#C9A96E; color:#fff; border-color:#C9A96E; }
+    }
+
+    /* ── Menú: dividers ── */
+    .menu-divider { background: linear-gradient(to right, transparent, #C9A96E44, transparent); }
+
+    /* ── Scroll suave ── */
+    html { scroll-behavior: smooth; }
+
+    /* ── WhatsApp flotante ── */
+    #wa-float { animation: waPulse 2.5s ease-in-out infinite; }
+    @keyframes waPulse {
+      0%,100% { box-shadow:0 0 0 0   rgba(37,211,102,0.4); }
+      50%     { box-shadow:0 0 0 10px rgba(37,211,102,0);   }
+    }
+  </style>
+</head>
+
+<body class="bg-brand-dark text-brand-cream font-sans antialiased">
+
+  <!-- ══════════════════════════════════════════
+       INTRO OVERLAY
+  ══════════════════════════════════════════ -->
+  <div id="intro-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-brand-dark px-6 text-center">
+    <h1 id="intro-logo" class="font-serif text-4xl sm:text-6xl md:text-7xl text-brand-cream tracking-[0.18em] font-light italic">
+      Hoyo 19 By Vrentino
+    </h1>
+    <div id="intro-line" class="mt-5 h-px w-32 bg-brand-gold origin-center"></div>
+    <p id="intro-sub" class="mt-4 font-sans text-[10px] sm:text-xs tracking-[0.3em] uppercase text-brand-muted">
+      El mejor golpe del día termina en el Hoyo 19.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       HERO
+       ✏️ EDITAR: imagen de fondo en background-image
+  ══════════════════════════════════════════ -->
+  <section
+    id="inicio"
+    class="relative min-h-screen flex items-center justify-center text-center px-5 sm:px-8"
+    style="background-image:url('hoyo19.png'); background-size:cover; background-position:center;"
+  >
+    <div class="absolute inset-0 bg-black/65"></div>
+    <div class="hero-content relative z-10 max-w-xl mx-auto w-full">
+      <p class="font-sans text-[10px] sm:text-xs tracking-[0.35em] uppercase text-brand-gold mb-5">
+        Bienvenido
+      </p>
+      <h2 class="font-serif text-5xl sm:text-6xl md:text-8xl font-light italic text-brand-cream leading-none mb-6">
+        Hoyo 19
+      </h2>
+      <div class="mx-auto h-px w-14 sm:w-16 bg-brand-gold mb-8"></div>
+      <a
+        href="#menu"
+        class="action-btn inline-block font-sans text-[10px] sm:text-xs tracking-[0.25em] uppercase border border-brand-gold text-brand-gold px-7 py-3 sm:px-8 hover:bg-brand-gold hover:text-brand-dark transition-colors duration-200"
+      >
+        Explorar el menú
+      </a>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       BOTONES DE ACCIÓN
+       ✏️ EDITAR: enlaces de Maps y WhatsApp
+  ══════════════════════════════════════════ -->
+  <section id="acciones" class="bg-[#111111] py-12 sm:py-14 px-4 sm:px-6">
+    <div class="max-w-sm mx-auto flex flex-col gap-3 sm:gap-4">
+
+      <a href="#menu" class="action-btn flex items-center gap-4 border border-brand-gold/30 px-5 sm:px-6 py-4 sm:py-5 group rounded-sm">
+        <span class="text-xl sm:text-2xl text-brand-gold flex-shrink-0">🍽</span>
+        <div class="min-w-0">
+          <p class="font-sans text-xs sm:text-sm tracking-widest uppercase text-brand-cream group-hover:text-brand-gold transition-colors truncate">Ver Menú</p>
+          <p class="font-serif italic text-brand-muted text-xs mt-0.5 truncate">Nuestra selección completa</p>
+        </div>
+        <span class="ml-auto text-brand-gold/40 group-hover:text-brand-gold text-base transition-colors flex-shrink-0">›</span>
+      </a>
+
+      <!-- ✏️ EDITAR: enlace de Google Maps -->
+      <a href="https://maps.app.goo.gl/HvCgiPvizGhUN2st7" target="_blank" rel="noopener" class="action-btn flex items-center gap-4 border border-brand-gold/30 px-5 sm:px-6 py-4 sm:py-5 group rounded-sm">
+        <span class="text-xl sm:text-2xl text-brand-gold flex-shrink-0">📍</span>
+        <div class="min-w-0">
+          <p class="font-sans text-xs sm:text-sm tracking-widest uppercase text-brand-cream group-hover:text-brand-gold transition-colors truncate">Ubicación</p>
+          <p class="font-serif italic text-brand-muted text-xs mt-0.5 truncate">Visítanos en La Paz, B.C.S.</p>
+        </div>
+        <span class="ml-auto text-brand-gold/40 group-hover:text-brand-gold text-base transition-colors flex-shrink-0">›</span>
+      </a>
+
+      <!-- ✏️ EDITAR: número de WhatsApp -->
+      <a href="https://wa.me/+526121940225?text=Hola,%20me%20gustar%C3%ADa%20hacer%20una%20reservaci%C3%B3n" target="_blank" rel="noopener"
+        class="action-btn flex items-center gap-4 bg-[#1A2E1A] border border-[#25d366]/40 px-5 sm:px-6 py-4 sm:py-5 group hover:bg-[#25d366]/10 rounded-sm">
+        <span class="text-xl sm:text-2xl flex-shrink-0" style="color:#25d366">💬</span>
+        <div class="min-w-0">
+          <p class="font-sans text-xs sm:text-sm tracking-widest uppercase text-brand-cream group-hover:text-[#25d366] transition-colors truncate">Reservar WhatsApp</p>
+          <p class="font-serif italic text-brand-muted text-xs mt-0.5 truncate">Atención inmediata</p>
+        </div>
+        <span class="ml-auto text-[#25d366]/40 group-hover:text-[#25d366] text-base transition-colors flex-shrink-0">›</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       MENÚ
+  ══════════════════════════════════════════ -->
+  <section id="menu" style="background:#F5EFE6; color:#1C1410;">
+
+    <!-- Encabezado -->
+    <div class="text-center pt-16 sm:pt-20 pb-8 sm:pb-10 px-4 sm:px-6">
+      <p class="font-sans text-[10px] sm:text-xs tracking-[0.35em] uppercase mb-3" style="color:#C9A96E;">La Carta</p>
+      <h2 class="font-serif text-4xl sm:text-5xl md:text-6xl italic font-light" style="color:#1C1410;">Nuestro Menú</h2>
+      <div class="menu-divider h-px w-40 sm:w-48 mx-auto mt-5 sm:mt-6"></div>
+    </div>
+
+    <!-- ── Navegación de categorías ──
+         Scroll horizontal en móvil, centrado en tablet+
+         Indicador de deslizamiento: sombra derecha en móvil
+    ──────────────────────────────────────────── -->
+    <div class="category-nav-wrap sticky top-0 z-30">
+      <nav class="category-nav overflow-x-auto border-b" style="background:#F5EFE6; border-color:#D9C9B0;">
+        <div class="flex gap-2 px-4 py-3 md:justify-center md:px-0 min-w-max md:min-w-0 mx-auto">
+          <a href="#desayunos"    data-cat="desayunos"    class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Desayunos</a>
+          <a href="#omelettes"   data-cat="omelettes"    class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Omelettes</a>
+          <a href="#especiales"  data-cat="especiales"   class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Especiales</a>
+          <a href="#esquina"     data-cat="esquina"      class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Huevos</a>
+          <a href="#pancakes"    data-cat="pancakes"     class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Pancakes</a>
+          <a href="#hamburguesas" data-cat="hamburguesas" class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Burgers</a>
+          <a href="#taqueria"    data-cat="taqueria"     class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Taquería</a>
+          <a href="#ensaladas"   data-cat="ensaladas"    class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Ensaladas</a>
+          <a href="#bebidas"     data-cat="bebidas"      class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Bebidas</a>
+          <a href="#botanas"     data-cat="botanas"      class="cat-pill font-sans text-[9px] sm:text-[10px] tracking-widest uppercase px-3 sm:px-4 py-1.5 sm:py-2 border rounded-full whitespace-nowrap" style="border-color:#C9A96E99; color:#7A6045;">Botanas</a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="max-w-lg mx-auto px-4 sm:px-6 py-10 sm:py-12 space-y-14 sm:space-y-16">
+
+      <!-- ══ DESAYUNOS MEXICANOS ══ -->
+      <div id="desayunos">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-1.5 tracking-wide" style="color:#1C1410;">Desayunos Mexicanos</h3>
+        <p class="font-serif italic text-xs sm:text-sm mb-7 sm:mb-8" style="color:#9A8070;">Servidos con frijoles refritos y pan tostado, o guarnición de chilaquiles según el platillo.</p>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium leading-snug" style="color:#1C1410;">Al Despertar / Wake Up</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1 leading-relaxed" style="color:#6B5744;">Chilaquiles rojos o verdes, crema, queso monterrey, cebolla morada, frijoles y guacamole. <em style="color:#C9A96E;">+Pollo $90</em></p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$280</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium leading-snug" style="color:#1C1410;">Huevos Rancheros</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1 leading-relaxed" style="color:#6B5744;">Jamón de pavo, tortilla de maíz, salsa ranchera y frijoles refritos.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$250</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium leading-snug" style="color:#1C1410;">Huevos Rancheros Hoyo 19</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1 leading-relaxed" style="color:#6B5744;">Tortilla de harina, chorizo, jamón, queso monterrey, salsa ranchera, cebolla morada, guacamole y crema de jalapeños.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$280</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium leading-snug" style="color:#1C1410;">Paceño</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1 leading-relaxed" style="color:#6B5744;">Chilaquiles, burrito de machaca de res, frijoles refritos, queso fresco del centenario y cebolla morada.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$290</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium leading-snug" style="color:#1C1410;">Paseado</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1 leading-relaxed" style="color:#6B5744;">Tres burritos de machaca de res, frijoles refritos, queso fresco y salsa martajada.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$300</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium leading-snug" style="color:#1C1410;">Ranchero Tata Juan</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1 leading-relaxed" style="color:#6B5744;">Arrachera asada, frijol, tortilla frita, salsa ranchera, aguacate y cilantro.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$290</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium leading-snug" style="color:#1C1410;">Ranchero Classic</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1 leading-relaxed" style="color:#6B5744;">Jamón de pavo, tortilla de maíz con salsa ranchera y frijoles.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$190</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ OMELETTES ══ -->
+      <div id="omelettes">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-1.5 tracking-wide" style="color:#1C1410;">Omelettes Estilo Francés</h3>
+        <p class="font-serif italic text-xs sm:text-sm mb-7 sm:mb-8" style="color:#9A8070;">Con papas, frijoles refritos y pan tostado de masa madre — $290</p>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Mercedes</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Jamón de pavo y queso manchego.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Luly</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Calabacitas, espinacas y queso manchego.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Elisa</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Champiñones y queso manchego.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Del Oeste</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Jamón de pavo, cebollas caramelizadas, pimiento verde y queso mozzarella.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Mediterráneo</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Espinacas, tomate, cebolla caramelizada, pimiento, aceitunas kalamata y queso feta.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Santa Carmela</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Tomate, jalapeño, cebolla caramelizada, queso, jamón de pavo, salsa ranchera y cilantro.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Vegetales</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Claras batidas con champiñones, tomates, cebolla, pimiento, calabaza y brócoli.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Omelettes Especiales -->
+        <h4 class="font-serif text-xl sm:text-2xl italic mt-10 mb-1.5" style="color:#1C1410;">Omelettes Especiales</h4>
+        <p class="font-serif italic text-xs sm:text-sm mb-7" style="color:#9A8070;">Con chilaquiles, fruta o ensalada de la casa — $300</p>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Omelette Baja</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Machaca regional, queso mozzarella y costra de queso del centenario.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Omelette Bermejo</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Camarón en salsa de chipotle, tocino crujiente y cebollita caramelizada.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Omelette a Caballo</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Arrachera al grill, queso mozzarella, salsa ranchera, aguacate, cebolla morada y cilantro.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ ESPECIALES DEL CHEF ══ -->
+      <div id="especiales">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-7 sm:mb-8 tracking-wide" style="color:#1C1410;">Especiales del Chef</h3>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Biscuits Especiales</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Huevos revueltos, tocino, queso cheddar, tomate asado y papa hash brown.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$290</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Biscuits Españoles</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Huevos revueltos, chorizo, queso jack, salsa de tomatillo y papa.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$290</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Croque Madame</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Sándwich al grill con jamón y queso, salsa cremosa y dos huevos estrellados encima.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$290</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ LA ESQUINA DE LOS HUEVOS ══ -->
+      <div id="esquina">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-7 sm:mb-8 tracking-wide" style="color:#1C1410;">La Esquina de los Huevos</h3>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">El Desayuno del Capitán</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Dos huevos estrellados, pan francés, tocino, mermelada de frambuesa y mantequilla pomada.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$300</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Huevos Benedictinos</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Dos huevos ponchados, salsa holandesa, biscuits, tocino canadiense y cebollín.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$290</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Huevos Benedictinos con Salmón</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Dos huevos ponchados, biscuits, salsa holandesa y salmón ahumado noruego.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$310</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Huevos Benedictinos del Arqui</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Dos huevos ponchados, salsa holandesa, biscuits, tocino canadiense, aguacate y espárragos.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$300</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Huevos Revueltos Españoles</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Chorizo español, cebolla caramelizada, tomate, queso monterrey, papa hash brown y pan tostado.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$270</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Bahamas</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Cerdo braseado BBQ, dos huevos ponchados, pan de maíz y salsa de tomatillo.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$280</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Avocado Toast</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Dos huevos ponchados, english muffin de arándanos, aguacate, espinaca y aderezo de albahaca.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$280</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ PANCAKES ══ -->
+      <div id="pancakes">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-7 sm:mb-8 tracking-wide" style="color:#1C1410;">Pancakes, Waffles y Más</h3>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Pancakes y Waffles</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Elige topping: Helado de vainilla · Plátanos y nueces · Fresa y nutella · Mermelada de frutos rojos · Plátano crujiente con canela.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$250</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Pan Francés</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Tres rebanadas de pan hecho en casa con miel maple y mermelada de frutos rojos.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$210</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ HAMBURGUESAS ══ -->
+      <div id="hamburguesas">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-1.5 tracking-wide" style="color:#1C1410;">Hamburguesas y Sándwiches</h3>
+        <p class="font-serif italic text-xs sm:text-sm mb-7 sm:mb-8" style="color:#9A8070;">A escoger: papas fritas, ensalada o aros de cebolla.</p>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">James Bonham</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">300 gr de carne molida y queso cheddar.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$210</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Hoyo 19 Street Burger</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">8 oz Sirloin/Diezmillo, cebollas caramelizadas, queso suizo y bun artesanal.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$200</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Juampi</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Pollo empanizado, lechugas, tomate y bun hecho en casa.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$200</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Tocino y Champiñones</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Sirloin, tocino, queso manchego, champiñones al vino blanco y pan brioche.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$220</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Kale - Avocado Especial</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Tocino de pavo y huevos revueltos en pan sourdough.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$190</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Del Norte</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Arrachera, queso cheddar, gruyere y cebollas caramelizadas en pan sourdough.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$190</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ TAQUERÍA ══ -->
+      <div id="taqueria">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-7 sm:mb-8 tracking-wide" style="color:#1C1410;">Taquería Hoyo 19</h3>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Taco Teriyaki</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Arrachera marinada, aguacate, cebolla morada curtida y sésamo.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$170</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Taco Especial de Camarón</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Camarón a la mantequilla, costra de quesos, tocino y aguacate.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$170</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Tacos Estilo Baja</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">3 piezas · tortilla de maíz, tempura, ensalada de col y aguacate.</p>
+            </div>
+            <div class="flex-shrink-0 text-right mt-0.5">
+              <span class="font-sans text-xs sm:text-sm font-medium block" style="color:#C9A96E;">$220 camarón</span>
+              <span class="font-sans text-xs sm:text-sm font-medium block" style="color:#C9A96E;">$210 pescado</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ ENSALADAS ══ -->
+      <div id="ensaladas">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-7 sm:mb-8 tracking-wide" style="color:#1C1410;">Ensaladas</h3>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Valentino</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Mezcla de lechugas, peras caramelizadas, queso de cabra y nuez.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$190</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">La Griega</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Pepino, tomates cherry, queso feta, aceitunas kalamata y quinoa.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$190</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">David</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Camarones salteados, aderezo de albahaca, aguacate y quinoa.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$190</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ BEBIDAS ══ -->
+      <div id="bebidas">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-7 sm:mb-8 tracking-wide" style="color:#1C1410;">Bebidas</h3>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Café Americano</p>
+              <p class="font-serif italic text-xs mt-1" style="color:#6B5744;">Con refill incluido.</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$60</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Capuccino / Latte / Matcha</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$90</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Jugos Naturales / Limonada</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$90</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Cerveza Nacional</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$70</span>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Clamato Preparado</p>
+            </div>
+            <span class="font-sans text-xs sm:text-sm font-medium flex-shrink-0 mt-0.5" style="color:#C9A96E;">$80</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ BOTANAS ══ -->
+      <div id="botanas" class="pb-4">
+        <h3 class="font-serif text-2xl sm:text-3xl italic mb-7 sm:mb-8 tracking-wide" style="color:#1C1410;">Algo Más… Botanas</h3>
+        <div class="space-y-5 sm:space-y-6">
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Guacamole</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Con totopos y salsa.</p>
+            </div>
+          </div>
+          <div class="menu-divider h-px"></div>
+
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-xs sm:text-sm font-medium" style="color:#1C1410;">Mr. Nachos</p>
+              <p class="font-serif italic text-xs sm:text-sm mt-1" style="color:#6B5744;">Carne a la parrilla, quesos derretidos, frijoles, crema y jalapeños.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       FOOTER
+       ✏️ EDITAR: horarios y redes
+  ══════════════════════════════════════════ -->
+  <footer class="bg-brand-dark border-t border-brand-gold/20 py-12 px-4 sm:px-6 text-center">
+    <h2 class="font-serif text-2xl sm:text-3xl italic text-brand-cream mb-1">Hoyo 19</h2>
+    <div class="h-px w-10 bg-brand-gold mx-auto mb-5 sm:mb-6"></div>
+    <p class="font-sans text-[10px] tracking-[0.3em] uppercase text-brand-muted mb-1">La Paz, Baja California Sur</p>
+    <p class="font-sans text-[10px] text-brand-muted/50 tracking-widest mt-6 uppercase">© 2025 Hoyo 19 · Todos los derechos reservados</p>
+  </footer>
+
+  <!-- ══════════════════════════════════════════
+       BOTÓN FLOTANTE WHATSAPP
+       ✏️ EDITAR: número de teléfono
+  ══════════════════════════════════════════ -->
+  <a
+    id="wa-float"
+    href="https://wa.me/+526121940225?text=Hola,%20me%20gustar%C3%ADa%20hacer%20una%20reservaci%C3%B3n"
+    target="_blank" rel="noopener"
+    class="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center justify-center w-13 h-13 sm:w-14 sm:h-14 rounded-full shadow-xl"
+    style="background:#25d366; width:52px; height:52px;"
+    title="Reservar por WhatsApp"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="26" height="26" fill="white">
+      <path d="M16 2C8.28 2 2 8.28 2 16c0 2.47.67 4.78 1.83 6.77L2 30l7.45-1.8A13.93 13.93 0 0016 30c7.72 0 14-6.28 14-14S23.72 2 16 2zm0 25.4a11.4 11.4 0 01-5.8-1.57l-.42-.24-4.3 1.03 1.1-4.1-.28-.43a11.4 11.4 0 119.8 5.31zm6.4-8.73c-.35-.18-2.07-1-2.4-1.12-.32-.1-.55-.18-.78.18s-.88 1.12-1.08 1.34c-.2.22-.4.25-.75.07a9.47 9.47 0 01-2.78-1.7 10.44 10.44 0 01-1.92-2.39c-.2-.35-.02-.54.15-.71s.35-.4.53-.6c.18-.2.25-.32.38-.54s.05-.42-.02-.6-.78-1.88-1.08-2.59c-.3-.7-.6-.6-.82-.6h-.7c-.25 0-.65.1-.98.48a3.53 3.53 0 00-1.1 2.62c0 1.55 1.13 3.05 1.28 3.27s2.22 3.4 5.39 4.76c.75.32 1.34.52 1.8.66.76.24 1.45.2 2 .11.6-.1 1.85-.75 2.1-1.48.27-.72.27-1.35.19-1.48s-.3-.22-.65-.4z"/>
+    </svg>
+  </a>
+
+  <script>
+    /* ── Pill activo al hacer scroll (IntersectionObserver) ──
+       Resalta automáticamente la categoría visible en pantalla
+    ──────────────────────────────────────────────────────── */
+    const sections = document.querySelectorAll('#menu [id]');
+    const pills    = document.querySelectorAll('.cat-pill');
+    const nav      = document.querySelector('.category-nav');
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          pills.forEach(p => {
+            const active = p.dataset.cat === id;
+            p.classList.toggle('active', active);
+            /* auto-scroll del pill activo al centro de la barra */
+            if (active && nav) {
+              const pillRect = p.getBoundingClientRect();
+              const navRect  = nav.getBoundingClientRect();
+              const offset   = pillRect.left - navRect.left - navRect.width / 2 + pillRect.width / 2;
+              nav.scrollBy({ left: offset, behavior: 'smooth' });
+            }
+          });
+        }
+      });
+    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+
+    sections.forEach(s => observer.observe(s));
+  </script>
+
+</body>
+</html>
